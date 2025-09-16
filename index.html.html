@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stock Trading Calculator</title>
+  <style>
+    :root {
+      --bg: #0b0f13;
+      --panel: #11161c;
+      --muted: #9fb0c3;
+      --text: #e9f0f7;
+      --brand: #4cc9f0;
+      --accent: #80ffdb;
+      --danger: #ff6b6b;
+      --ok: #12d18e;
+      --border: #1e2833;
+      --card: #0f141a;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 20% -10%, #12202d 0%, var(--bg) 40%),
+                  radial-gradient(900px 700px at 120% 20%, #151a29 0%, var(--bg) 30%),
+                  var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 48px auto;
+      padding: 0 20px 64px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: 28px; margin: 0; letter-spacing: .2px; }
+    .sub { color: var(--muted); margin-top: 6px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 920px) {
+      .grid { grid-template-columns: 380px 1fr; }
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--card));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
+    }
+
+    .card h2 { font-size: 16px; font-weight: 700; margin: 0 0 12px; opacity: .95; }
+    .row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 680px){ .row.two { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 920px){ .row.three { grid-template-columns: 1fr 1fr 1fr; } }
+
+    label { font-size: 13px; color: var(--muted); display:block; margin-bottom: 6px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      background: #0e141a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      padding: 12px 14px;
+      font-size: 14px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(76,201,240,.15); }
+
+    .btns { display:flex; flex-wrap: wrap; gap:8px; }
+    .btn, .btn-outline {
+      appearance:none; border:1px solid var(--border); background:#0e141a; color:var(--text);
+      padding:8px 12px; border-radius:999px; font-size:13px; cursor:pointer; transition:all .15s;
+    }
+    .btn:hover, .btn-outline:hover { border-color: var(--brand); }
+    .btn.active { background: linear-gradient(180deg, #0f2230, #0b141d); border-color: var(--brand); box-shadow: 0 0 0 3px rgba(76,201,240,.12); }
+
+    .danger { color: var(--danger); }
+    .ok { color: var(--ok); }
+
+    .actions { display:flex; gap:10px; align-items:center; margin-top: 10px; }
+    .clear { background:#140e10; border-color:#3a1c27; }
+
+    .results {
+      display:grid; grid-template-columns: 1fr; gap:12px;
+    }
+    @media (min-width:760px){ .results { grid-template-columns: repeat(2, 1fr);} }
+    @media (min-width:1100px){ .results { grid-template-columns: repeat(3, 1fr);} }
+
+    .stat {
+      background: #0c1016;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .stat h3 { margin:0 0 8px; font-size:12px; color:var(--muted); font-weight:600; letter-spacing:.2px; }
+    .stat .val { font-size:20px; font-weight:800; letter-spacing:.2px; }
+    .unit { color: var(--muted); font-weight:600; margin-left:4px; font-size: 12px; }
+
+    details {
+      background: #0c1117;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    summary { cursor: pointer; font-weight: 700; }
+
+    footer { margin-top: 26px; color: var(--muted); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    footer a { color: var(--brand); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    .badge { font-size: 11px; background:#0d141b; padding:6px 8px; border-radius:8px; border:1px solid var(--border); }
+
+    .toast { display:none; position: fixed; inset: auto 16px 16px auto; background:#0d141b; color:var(--text); border:1px solid var(--border); padding:10px 12px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+    .toast.show { display:block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Stock Trading Calculator</h1>
+        <div class="sub">Smart position sizing for safer trading — never risk too much on a single trade</div>
+      </div>
+      <button class="btn" id="theme">☀️</button>
+    </header>
+
+    <div class="grid">
+      <!-- Left: Inputs -->
+      <section class="card" id="inputs">
+        <h2>Account Information</h2>
+        <div class="row">
+          <div>
+            <label for="accountSize">Account Size ($)</label>
+            <input id="accountSize" inputmode="decimal" placeholder="$" />
+            <div class="hint">Use shorthand: <span class="badge">10k</span> = $10,000 or <span class="badge">1.5m</span> = $1,500,000</div>
+          </div>
+        </div>
+
+        <div class="row two" style="margin-top:12px">
+          <div>
+            <label>Risk per Trade (%)</label>
+            <div class="btns" id="riskBtns">
+              <button class="btn" data-risk="0.1">0.1%</button>
+              <button class="btn" data-risk="0.25">0.25%</button>
+              <button class="btn" data-risk="0.5">0.5%</button>
+              <button class="btn" data-risk="0.75">0.75%</button>
+              <button class="btn" data-risk="1">1%</button>
+            </div>
+            <div class="actions">
+              <input id="riskCustom" inputmode="decimal" placeholder="%" style="max-width:140px" />
+              <span class="hint">Risk Scenarios</span>
+            </div>
+          </div>
+
+          <div>
+            <label>Max % of Account</label>
+            <div class="btns" id="capBtns">
+              <button class="btn" data-cap="10">10%</button>
+              <button class="btn" data-cap="20">20%</button>
+              <button class="btn" data-cap="50">50%</button>
+              <button class="btn" data-cap="75">75%</button>
+              <button class="btn" data-cap="100">100%</button>
+            </div>
+            <div class="actions">
+              <input id="capCustom" inputmode="decimal" placeholder="%" style="max-width:140px" />
+              <span class="hint">Limits maximum position size as % of account</span>
+            </div>
+          </div>
+        </div>
+
+        <h2 style="margin-top:18px">Trade Details</h2>
+        <div class="row two">
+          <div>
+            <label for="ticker">Ticker Symbol</label>
+            <input id="ticker" placeholder="$" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button class="btn-outline clear" id="clear">Clear Calculator</button>
+          </div>
+        </div>
+        <div class="row three" style="margin-top:8px">
+          <div>
+            <label for="entry">Entry Price ($)</label>
+            <input id="entry" inputmode="decimal" placeholder="$" />
+          </div>
+          <div>
+            <label for="stop">Stop Loss Price ($)</label>
+            <input id="stop" inputmode="decimal" placeholder="$" />
+            <div class="hint">Must be below entry price</div>
+          </div>
+          <div>
+            <label for="target">Target Price ($) – Optional</label>
+            <input id="target" inputmode="decimal" placeholder="$" />
+            <div class="hint">Should be above entry price</div>
+          </div>
+        </div>
+
+        <details style="margin-top:12px">
+          <summary>How it Works – Example</summary>
+          <div class="hint" style="margin-top:8px; line-height:1.6">
+            If you have a $10,000 account and want to risk 1%:<br/>
+            Your risk budget: $100<br/>
+            Stock price: $50, Stop loss: $48 (risking $2 per share)<br/>
+            Shares to buy: $100 ÷ $2 = 50 shares<br/>
+            Position size: 50 × $50 = $2,500<br/>
+            This way, you never risk more than 1% even if the trade goes wrong!
+          </div>
+        </details>
+      </section>
+
+      <!-- Right: Results -->
+      <section class="card" id="outputs">
+        <h2>Results</h2>
+        <div class="results">
+          <div class="stat"><h3>Shares to Purchase</h3><div class="val" id="shares">-</div></div>
+          <div class="stat"><h3>Position Size</h3><div class="val" id="pos">-</div></div>
+          <div class="stat"><h3>Stop Distance</h3><div class="val" id="stopdist">-</div></div>
+          <div class="stat"><h3>Total Risk Amount</h3><div class="val" id="riskamt">-</div></div>
+          <div class="stat"><h3>% of Account</h3><div class="val" id="pctacct">-</div></div>
+          <div class="stat"><h3>R Multiple</h3><div class="val" id="rmult">- R</div></div>
+          <div class="stat"><h3>5R Target Price Trim Zone</h3><div class="val" id="fiveR">-</div></div>
+        </div>
+
+        <h2 style="margin-top:18px">If Target is Hit</h2>
+        <div class="results">
+          <div class="stat"><h3>Profit Per Share</h3><div class="val" id="pps">-</div></div>
+          <div class="stat"><h3>Total Profit ➕</h3><div class="val" id="tprofit">-</div></div>
+          <div class="stat"><h3>Return on Investment</h3><div class="val" id="roi">-</div></div>
+          <div class="stat"><h3>Risk:Reward Ratio</h3><div class="val" id="rr">-</div></div>
+        </div>
+
+        <details style="margin-top:16px">
+          <summary>Risk Scenarios</summary>
+          <div id="scenarios" class="hint" style="margin-top:8px; display:grid; gap:8px"></div>
+        </details>
+      </section>
+    </div>
+
+    <footer>
+      <span>Trade Journal</span>
+      <span class="badge">Journal feature coming soon…</span>
+      <span style="flex:1"></span>
+      <span class="hint">Made with ❤️</span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const fmtUSD = (n) => isFinite(n) ? n.toLocaleString(undefined,{ style:'currency', currency:'USD', maximumFractionDigits:2 }) : '-';
+    const fmtNum = (n, d=2) => isFinite(n) ? Number(n).toLocaleString(undefined,{ maximumFractionDigits:d }) : '-';
+
+    function parseMoneyLike(v){
+      if (!v) return NaN;
+      v = (""+v).trim().toLowerCase().replace(/[$,\s]/g, "");
+      if (!v) return NaN;
+      const suf = v.slice(-1);
+      const base = parseFloat(/k|m|b/.test(suf) ? v.slice(0,-1) : v);
+      if (isNaN(base)) return NaN;
+      if (suf === 'k') return base * 1e3;
+      if (suf === 'm') return base * 1e6;
+      if (suf === 'b') return base * 1e9;
+      return base;
+    }
+
+    let riskPct = 1; // default
+    let capPct = 100;
+
+    const riskBtns = document.querySelectorAll('#riskBtns .btn');
+    const capBtns  = document.querySelectorAll('#capBtns .btn');
+
+    function setActive(btns, value, attr){
+      btns.forEach(b=> b.classList.toggle('active', b.getAttribute(attr) == String(value)));
+    }
+
+    riskBtns.forEach(b=> b.addEventListener('click', ()=>{
+      riskPct = parseFloat(b.dataset.risk);
+      setActive(riskBtns, riskPct, 'data-risk');
+      update();
+    }));
+    capBtns.forEach(b=> b.addEventListener('click', ()=>{
+      capPct = parseFloat(b.dataset.cap);
+      setActive(capBtns, capPct, 'data-cap');
+      update();
+    }));
+
+    $('riskCustom').addEventListener('input', (e)=>{
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v)) { riskPct = v; setActive(riskBtns, null, 'data-risk'); update(); }
+    });
+    $('capCustom').addEventListener('input', (e)=>{
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v)) { capPct = v; setActive(capBtns, null, 'data-cap'); update(); }
+    });
+
+    ;['accountSize','entry','stop','target','ticker'].forEach(id=>{
+      $(id).addEventListener('input', update);
+    });
+
+    $('clear').addEventListener('click', ()=>{
+      ['accountSize','entry','stop','target','ticker','riskCustom','capCustom'].forEach(id=> $(id).value='');
+      riskPct = 1; capPct = 100;
+      setActive(riskBtns, 1, 'data-risk');
+      setActive(capBtns, 100, 'data-cap');
+      update();
+      toast('Cleared.');
+    });
+
+    function toast(msg){
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(()=> t.classList.remove('show'), 1500);
+    }
+
+    function update(){
+      const acct = parseMoneyLike($('accountSize').value);
+      const entry = parseFloat($('entry').value);
+      const stop  = parseFloat($('stop').value);
+      const target= parseFloat($('target').value);
+
+      // Scenarios table
+      renderScenarios(acct, entry, stop);
+
+      if (!isFinite(acct) || !isFinite(entry) || !isFinite(stop)) {
+        setVals({ shares:'-', pos:'-', stopdist:'-', riskamt:'-', pctacct:'-', rmult:'- R', fiveR:'-', pps:'-', tprofit:'-', roi:'-', rr:'-' });
+        return;
+      }
+
+      const stopDist = entry - stop;
+      if (stopDist <= 0) {
+        setVals({ shares:'-', pos:'-', stopdist: 'Invalid', riskamt:'-', pctacct:'-', rmult:'- R', fiveR:'-', pps:'-', tprofit:'-', roi:'-', rr:'-' });
+        return;
+      }
+
+      const riskBudget = acct * (riskPct/100);
+      let shares = Math.floor(riskBudget / stopDist);
+      // enforce cap
+      const maxPos = acct * (capPct/100);
+      if (shares * entry > maxPos) {
+        shares = Math.floor(maxPos / entry);
+      }
+
+      const position = shares * entry;
+      const riskAmt = shares * stopDist;
+      const pctAccount = position / acct * 100;
+      const fiveRprice = entry + 5 * stopDist;
+
+      // Target-dependent
+      let pps = NaN, totalProfit = NaN, roi = NaN, rmult = NaN, rr = NaN;
+      if (isFinite(target)) {
+        pps = target - entry;
+        totalProfit = shares * pps;
+        roi = position ? (totalProfit / position * 100) : NaN;
+        rmult = stopDist ? (pps / stopDist) : NaN;
+        rr = stopDist ? (pps / stopDist) : NaN;
+      }
+
+      setVals({
+        shares: fmtNum(shares,0),
+        pos: fmtUSD(position),
+        stopdist: fmtUSD(stopDist),
+        riskamt: fmtUSD(riskAmt),
+        pctacct: isFinite(pctAccount) ? fmtNum(pctAccount,2)+"%" : '-',
+        rmult: isFinite(rmult) ? fmtNum(rmult,2)+" R" : '- R',
+        fiveR: fmtUSD(fiveRprice),
+        pps: isFinite(pps) ? fmtUSD(pps) : '-',
+        tprofit: isFinite(totalProfit) ? fmtUSD(totalProfit) : '-',
+        roi: isFinite(roi) ? fmtNum(roi,2)+"%" : '-',
+        rr: isFinite(rr) ? "1:"+fmtNum(rr,2) : '-'
+      });
+    }
+
+    function setVals(map){
+      Object.entries(map).forEach(([k,v])=> { const el = $(k); if (el) el.textContent = v; });
+    }
+
+    function renderScenarios(acct, entry, stop){
+      const wrap = $('scenarios');
+      wrap.innerHTML = '';
+      const rows = [0.1,0.25,0.5,0.75,1].map(p=>{
+        let out = `<div class="badge">${p}% Risk - `;
+        if (!isFinite(acct) || !isFinite(entry) || !isFinite(stop) || entry - stop <= 0) {
+          out += `—</div>`;
+        } else {
+          const riskBudget = acct*(p/100);
+          const perShare = entry - stop;
+          const shares = Math.floor(riskBudget / perShare);
+          const pos = shares * entry;
+          out += `${shares.toLocaleString()} shares (${fmtUSD(pos)})</div>`;
+        }
+        return out;
+      });
+      wrap.innerHTML = rows.join('');
+    }
+
+    // theme toggle (simple)
+    $('theme').addEventListener('click', ()=>{
+      document.body.classList.toggle('light');
+      $('theme').textContent = document.body.classList.contains('light') ? '🌙' : '☀️';
+    });
+
+    // initial state
+    setActive(riskBtns, 1, 'data-risk');
+    setActive(capBtns, 100, 'data-cap');
+    update();
+  </script>
+</body>
+</html>
